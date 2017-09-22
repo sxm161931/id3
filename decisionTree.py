@@ -5,6 +5,8 @@ from Node import Node
 import sys
 import pandas as pd
 
+global other_count
+global leaf_count 
 
 def main(args):
     for arg in args[1:]:
@@ -21,7 +23,7 @@ def main(args):
     # print(len(df_training))
     # print(len(df_training[(df_training['Class']==0)]))
     target_attr = list(df_training)
-
+    print(len(df_training))
     target_attr.remove('Class')
     print(len(target_attr))
 
@@ -32,6 +34,7 @@ def main(args):
     root_node = Node(None, None, 0, 0, 0, target_attr,
                      '', '', '', df_training, False,None)
     root_node = root_def(df_training, target_attr)
+    ''' 
     len_left_attr = len(root_node.left.target_attr)
     if((root_node.left is not None) and len_left_attr != 0):
         #root_def(root_node.left.df , root_node.target_attr)
@@ -43,25 +46,29 @@ def main(args):
         #root_def(root_node.left.df , root_node.target_attr)
         #root_node.leaf_flag = False
         root_node.right.entropy, root_node.right.attr, root_node.right.leftcount, root_node.right.rightcount = best_attr(
-            root_node.right.target_attr, root_node.right.df)
+            root_node.right.target_attr, root_node.right.df) 
+    '''
+    global leaf_count
+    global total_count
 
+    total_count = 0
+    leaf_count = 0
+    temp = root_node
+    temp = build_children(temp)
 
-        temp = root_node
-        temp2 = root_node.right
-        temp = build_children(temp)
-            
-        #temp.left = build_children(temp.left)
+           
+    #temp.left = build_children(temp.left)
             
         #temp.right = build_children(temp.right)
         #while(not temp.leaf_flag) :
             
            
             
-        '''
+    '''
         while(not temp2.leaf_flag) :
             temp2 = build_children(temp2)
             temp2 = temp2.right
-        '''
+    '''
         #root_node.right = build_children(root_node.right)
         
     
@@ -71,6 +78,8 @@ def main(args):
     print("Printing Tree")
     #print_tree(root_node)
     printTree(root_node,0)
+    print(total_count)
+    print(leaf_count) 
     '''
     attrs = vars(test_node)
     print ', '.join("%s: %s" % item for item in attrs.items())
@@ -129,8 +138,12 @@ def build_children(root_node):
 
 
 def printTree( root,count_tab):
+    global leaf_count
+    global total_count
     if(root.leaf_flag == True):
         print(root.label)
+        leaf_count += 1
+        total_count += 1
     else:
         if(count_tab!=0):
             print ()
@@ -138,12 +151,13 @@ def printTree( root,count_tab):
             print("|  " , end = ' ')
             
         print(root.attr +" = 0 : ", end=" ")
+        total_count += 1
         printTree(root.left,count_tab+1);
         for i in range(0,count_tab):
             print("|  ",end=" ")
         print(root.attr+" = 1 : ",end=" ")
         printTree(root.right,count_tab+1);
-
+    
 
 def print_tree(root):
     
