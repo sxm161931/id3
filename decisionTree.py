@@ -87,7 +87,7 @@ def main(args):
     # calculation for left i.e 0 (-), right i.e 1(+)
 
 def build_children(root_node):
-    while(root_node is not None and not root_node.leaf_flag and (len(root_node.target_attr) != 0 )):
+    while(root_node is not None and not root_node.leaf_flag and (len(root_node.target_attr) != 0 ) and root_node.attr != ''):
         left = root_node.df[(root_node.df[root_node.attr] == 0)]
         #print(left.Class.nunique())
         if(left.Class.nunique() == 1):
@@ -110,7 +110,15 @@ def build_children(root_node):
                 s for s in root_node.target_attr if s != root_node.attr]
             root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = best_attr(
             root_node.left.target_attr, root_node.left.df)
-            build_children(root_node.left)
+            if(root_node.left.attr != ''):
+                build_children(root_node.left)
+            else :
+                #root_node.left = None
+                root_node.left.leaf_flag = True
+                if(root_node.left.leftcount > root_node.left.rightcount):
+                    root_node.left.label = '0'
+                else:
+                    root_node.left.label = '1'
 
         right = root_node.df[(root_node.df[root_node.attr] == 1)]
         if(right.Class.nunique() == 1):
@@ -140,7 +148,9 @@ def build_children(root_node):
 def printTree( root,count_tab):
     global leaf_count
     global total_count
-    if(root.leaf_flag == True):
+    if(root is None):
+        return
+    if(root is not None and root.leaf_flag == True):
         print(root.label)
         leaf_count += 1
         total_count += 1
