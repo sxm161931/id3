@@ -78,16 +78,20 @@ def main(args):
 def build_children(root_node):
     while(root_node is not None and not root_node.leaf_flag and (len(root_node.target_attr) != 0 )):
         left = root_node.df[(root_node.df[root_node.attr] == 0)]
-        if(len(left) == 0 or len(left) == root_node.leftcount or len(left) == root_node.rightcount):
+        #print(left.Class.nunique())
+        if(left.Class.nunique() == 1):
+            val = left['Class'].iloc[0]
+            
+            #print val
             root_node.left = Node(None, None, 0, len(left), root_node.rightcount,
-                                root_node.target_attr, '', '', '0', left,True,root_node)
-            root_node.left.target_attr = [
+                                root_node.target_attr, '', '', val, left,True,root_node)
+            ''' root_node.left.target_attr = [
                 s for s in root_node.target_attr if s != root_node.attr]
             root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = best_attr(
-            root_node.left.target_attr, root_node.left.df)
+            root_node.left.target_attr, root_node.left.df) '''
             root_node.left.leaf_flag = True
             
-            return build_children(root_node.right)
+            #(root_node.left)
         else:
             root_node.left = Node(None, None, 0, 0, 0,
                                 root_node.target_attr, '', '', '0', left,False,root_node)
@@ -95,16 +99,18 @@ def build_children(root_node):
                 s for s in root_node.target_attr if s != root_node.attr]
             root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = best_attr(
             root_node.left.target_attr, root_node.left.df)
-            return build_children(root_node.left)
+            build_children(root_node.left)
 
         right = root_node.df[(root_node.df[root_node.attr] == 1)]
-        if(len(right) == 0 or len(right) == root_node.rightcount or len(right) == root_node.leftcount):
+        if(right.Class.nunique() == 1):
+            val = right['Class'].iloc[0]
+
             root_node.right = Node(None, None, 0, root_node.leftcount, len(right),
-                                root_node.target_attr, '', '', '0', right,True,root_node)
-            root_node.right.target_attr = [
+                                root_node.target_attr, '', '', val, right,True,root_node)
+            ''' root_node.right.target_attr = [
                 s for s in root_node.target_attr if s != root_node.attr]
             root_node.right.entropy, root_node.right.attr, root_node.right.leftcount, root_node.right.rightcount = best_attr(
-            root_node.right.target_attr, root_node.right.df)
+            root_node.right.target_attr, root_node.right.df) '''
             root_node.right.leaf_flag = True
             return(root_node.right)
         else:
@@ -124,9 +130,14 @@ def print_tree(root):
     if root is None:
         return
     elif root.leaf_flag :
-        print("leaf node"+ root.attr + " " + root.label)
-        print()
-        #return
+        print("leaf node"+ root.attr + "decision " + str(root.label))
+         
+        '''  if root.left is None:
+            print("leaf node"+ root.parent.attr + " : 0")
+        if root.right is None:
+            print("leaf node"+ root.parent.attr + " : 1")
+        '''
+        return
     else:
         print(root.attr + " " + "0")
         print_tree(root.left)
