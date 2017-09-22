@@ -1,4 +1,5 @@
 from __future__ import division
+from __future__ import print_function
 from math import log10
 from Node import Node
 import sys
@@ -7,7 +8,7 @@ import pandas as pd
 
 def main(args):
     for arg in args[1:]:
-        print arg
+        print(arg)
 
     if(len(sys.argv) == 1):
         # print("Please enter training data file location")
@@ -68,7 +69,8 @@ def main(args):
 
 
     print("Printing Tree")
-    print_tree(root_node)
+    #print_tree(root_node)
+    printTree(root_node,0)
     '''
     attrs = vars(test_node)
     print ', '.join("%s: %s" % item for item in attrs.items())
@@ -124,6 +126,24 @@ def build_children(root_node):
 
 
     return root_node        
+
+
+def printTree( root,count_tab):
+    if(root.leaf_flag == True):
+        print(root.label)
+    else:
+        if(count_tab!=0):
+            print ()
+        for i in range(0,count_tab):
+            print("|  " , end = ' ')
+            
+        print(root.attr +" = 0 : ", end=" ")
+        printTree(root.left,count_tab+1);
+        for i in range(0,count_tab):
+            print("|  ",end=" ")
+        print(root.attr+" = 1 : ",end=" ")
+        printTree(root.right,count_tab+1);
+
 
 def print_tree(root):
     
