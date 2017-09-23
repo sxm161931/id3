@@ -1,3 +1,4 @@
+
 from __future__ import division
 from __future__ import print_function
 from math import log10
@@ -6,7 +7,9 @@ import sys
 import pandas as pd
 
 global other_count
-global leaf_count 
+global leaf_count
+global count1
+global count0
 
 def main(args):
     for arg in args[1:]:
@@ -15,8 +18,12 @@ def main(args):
     if(len(sys.argv) == 1):
         # print("Please enter training data file location")
         # loc = raw_input("Please enter training data file location")
-        loc = "training_set.csv"
+        loc = "training_set2.csv"
+        loc_val="validation_set2.csv"
+        loc_test ="test_set2.csv"
         df_training = pd.read_csv(loc)
+        df_val=pd.read_csv(loc_val)
+        df_test=pd.read_csv(loc_test)
     else:
         df_training = pd.read_csv(sys.argv[1])
     # print(df_training)
@@ -56,22 +63,22 @@ def main(args):
     temp = root_node
     temp = build_children(temp)
 
-           
+
     #temp.left = build_children(temp.left)
-            
-        #temp.right = build_children(temp.right)
-        #while(not temp.leaf_flag) :
-            
-           
-            
+
+    #temp.right = build_children(temp.right)
+    #while(not temp.leaf_flag) :
+
+
+
     '''
         while(not temp2.leaf_flag) :
             temp2 = build_children(temp2)
             temp2 = temp2.right
     '''
-        #root_node.right = build_children(root_node.right)
-        
-    
+    #root_node.right = build_children(root_node.right)
+
+
 
 
 
@@ -79,12 +86,21 @@ def main(args):
     #print_tree(root_node)
     printTree(root_node,0)
     print(total_count)
-    print(leaf_count) 
+    print(leaf_count)
+    getaccuracy(df_val,root_node)
+    getaccuracy(df_test,root_node)
+
+
+
+#    df_training.apply(printrow, axis=1)
     '''
     attrs = vars(test_node)
     print ', '.join("%s: %s" % item for item in attrs.items())
     '''
+
+
     # calculation for left i.e 0 (-), right i.e 1(+)
+
 
 def build_children(root_node):
     while(root_node is not None and not root_node.leaf_flag and (len(root_node.target_attr) != 0 ) and root_node.attr != ''):
@@ -92,24 +108,24 @@ def build_children(root_node):
         #print(left.Class.nunique())
         if(left.Class.nunique() == 1):
             val = left['Class'].iloc[0]
-            
+
             #print val
             root_node.left = Node(None, None, 0, len(left), root_node.rightcount,
-                                root_node.target_attr, '', '', val, left,True,root_node)
+                                  root_node.target_attr, '', '', val, left,True,root_node)
             ''' root_node.left.target_attr = [
                 s for s in root_node.target_attr if s != root_node.attr]
             root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = best_attr(
             root_node.left.target_attr, root_node.left.df) '''
             root_node.left.leaf_flag = True
-            
+
             #(root_node.left)
         else:
             root_node.left = Node(None, None, 0, 0, 0,
-                                root_node.target_attr, '', '', '0', left,False,root_node)
+                                  root_node.target_attr, '', '', '0', left,False,root_node)
             root_node.left.target_attr = [
                 s for s in root_node.target_attr if s != root_node.attr]
             root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = best_attr(
-            root_node.left.target_attr, root_node.left.df)
+                root_node.left.target_attr, root_node.left.df)
             if(root_node.left.attr != ''):
                 build_children(root_node.left)
             else :
@@ -125,7 +141,7 @@ def build_children(root_node):
             val = right['Class'].iloc[0]
 
             root_node.right = Node(None, None, 0, root_node.leftcount, len(right),
-                                root_node.target_attr, '', '', val, right,True,root_node)
+                                   root_node.target_attr, '', '', val, right,True,root_node)
             ''' root_node.right.target_attr = [
                 s for s in root_node.target_attr if s != root_node.attr]
             root_node.right.entropy, root_node.right.attr, root_node.right.leftcount, root_node.right.rightcount = best_attr(
@@ -134,15 +150,15 @@ def build_children(root_node):
             return(root_node.right)
         else:
             root_node.right = Node(None, None, 0, 0, 0,
-                                root_node.target_attr, '', '', '1', right,False,root_node)
+                                   root_node.target_attr, '', '', '1', right,False,root_node)
             root_node.right.target_attr = [
                 s for s in root_node.target_attr if s != root_node.attr]
             root_node.right.entropy, root_node.right.attr, root_node.right.leftcount, root_node.right.rightcount = best_attr(
-            root_node.right.target_attr, root_node.right.df)
+                root_node.right.target_attr, root_node.right.df)
             return build_children(root_node.right)
 
 
-    return root_node        
+    return root_node
 
 
 def printTree( root,count_tab):
@@ -159,7 +175,7 @@ def printTree( root,count_tab):
             print ()
         for i in range(0,count_tab):
             print("|  " , end = ' ')
-            
+
         print(root.attr +" = 0 : ", end=" ")
         total_count += 1
         printTree(root.left,count_tab+1);
@@ -167,15 +183,15 @@ def printTree( root,count_tab):
             print("|  ",end=" ")
         print(root.attr+" = 1 : ",end=" ")
         printTree(root.right,count_tab+1);
-    
+
 
 def print_tree(root):
-    
+
     if root is None:
         return
     elif root.leaf_flag :
         print("leaf node"+ root.attr + "decision " + str(root.label))
-         
+
         '''  if root.left is None:
             print("leaf node"+ root.parent.attr + " : 0")
         if root.right is None:
@@ -251,8 +267,8 @@ def best_attr(target_attr, df):
             firstTerm = (minus_side_zero / minus_side_len)
             secTerm = (minus_side_pos / minus_side_len)
         firstTermLog = 0
-        
-        
+
+
         secTermLog = 0
         #print(((len(minus_side_zero) / minus_side_len )))
         if(minus_side_zero == 0):
@@ -296,6 +312,7 @@ def best_attr(target_attr, df):
     #print(attr)
     return min_entropy, attr, minus_side_len, plus_side_len
 
+
 '''
 def cal_entropy(minus_cnt, plus_cnt, total):
     entropy = -[((minus_cnt / total) * (math.log10((minus_cnt / total)) / math.log10(2))
@@ -304,8 +321,28 @@ def cal_entropy(minus_cnt, plus_cnt, total):
     return entropy
 '''
 
+
+def getclass(instance, tree,default=None):
+    attribute = tree.attr
+    if(tree.left is not None and tree.right is not None):
+      #  print(instance[attribute])
+        if instance[attribute]== 0 :
+           return getclass(instance,tree.left)
+        elif instance[attribute]== 1 :
+           return getclass(instance,tree.right)
+    elif(tree.leaf_flag== True):
+        lab = tree.label
+        return lab
+
+
+
+def getaccuracy(df,root_node):
+    df['predicted'] = (df.apply(getclass, axis=1, args=(root_node, '1')))
+    print (('Accuracy is ' + str( sum(df['Class']==df['predicted'] ) / (1.0*len(df.index))*100.0)) + '%')
+
+
 #if __name__ == "__main__":
 main(sys.argv)
 
-    #  a = Test()
-    # b = a.test("abc")
+#  a = Test()
+# b = a.test("abc")
