@@ -1,129 +1,165 @@
-
 from __future__ import division
 from __future__ import print_function
 from math import log10
 from Node import Node
+import random
 import sys
 import pandas as pd
+import copy
 
 global other_count
 global leaf_count
-global count1
-global count0
+global node_num
 
 def main(args):
-    for arg in args[1:]:
-        print(arg)
+    
 
-    if(len(sys.argv) == 1):
+    if(len(sys.argv) == 5):
         # print("Please enter training data file location")
         # loc = raw_input("Please enter training data file location")
-        loc = "training_set2.csv"
-        loc_val="validation_set2.csv"
-        loc_test ="test_set2.csv"
+
+
+        loc = "training_set1.csv"
+        loc_val="validation_set.csv"
+        loc_test ="test_set.csv"
+        loc = sys.argv[1]
+        loc_val = sys.argv[2]
+        loc_test = sys.argv[3]
+        prun_fact = sys.argv[4]
         df_training = pd.read_csv(loc)
         df_val=pd.read_csv(loc_val)
         df_test=pd.read_csv(loc_test)
+        
     else:
         df_training = pd.read_csv(sys.argv[1])
     # print(df_training)
     # print(len(df_training))
     # print(len(df_training[(df_training['Class']==0)]))
     target_attr = list(df_training)
-    print(len(df_training))
+    #print(len(df_training))
     target_attr.remove('Class')
-    print(len(target_attr))
+   # print(len(target_attr))
 
-    #test_node = Node(None,None,0,150,150,target_attr,'','','',df_training)
 
     global root_node
-
+    global  node_num
+    node_num=1
+    print("Building Pre-Prunned Tree")
     root_node = Node(None, None, 0, 0, 0, target_attr,
-                     '', '', '', df_training, False,None)
+                     '', node_num, '', df_training, False,None)
     root_node = root_def(df_training, target_attr)
-    ''' 
-    len_left_attr = len(root_node.left.target_attr)
-    if((root_node.left is not None) and len_left_attr != 0):
-        #root_def(root_node.left.df , root_node.target_attr)
-        #root_node.leaf_flag = False
-        root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = best_attr(
-            root_node.left.target_attr, root_node.left.df)
-    len_right_attr = len(root_node.right.target_attr)
-    if((root_node.right is not None) and len_right_attr != 0):
-        #root_def(root_node.left.df , root_node.target_attr)
-        #root_node.leaf_flag = False
-        root_node.right.entropy, root_node.right.attr, root_node.right.leftcount, root_node.right.rightcount = best_attr(
-            root_node.right.target_attr, root_node.right.df) 
-    '''
     global leaf_count
     global total_count
 
     total_count = 0
     leaf_count = 0
-    temp = root_node
-    temp = build_children(temp)
 
-
-    #temp.left = build_children(temp.left)
-
-    #temp.right = build_children(temp.right)
-    #while(not temp.leaf_flag) :
-
-
-
-    '''
-        while(not temp2.leaf_flag) :
-            temp2 = build_children(temp2)
-            temp2 = temp2.right
-    '''
-    #root_node.right = build_children(root_node.right)
-
-
-
-
+    build_children(root_node)
 
     print("Printing Tree")
-    #print_tree(root_node)
     printTree(root_node,0)
-    print(total_count)
-    print(leaf_count)
-    getaccuracy(df_val,root_node)
-    getaccuracy(df_test,root_node)
+    print(prun_fact)
+    ntp= int(float(prun_fact) * int(total_count))
+
+    print('Pre-prunned Accuracy' )
+    print("--------------------------------------------------------------")
+    no_train = len(df_training)
+    target_attr_train = list(df_training)
+    target_attr_train.remove('Class')
+    no_attri = len(target_attr_train)
+
+    print('Number of training instances = ' + str(no_train))
+    print('Number of training attributes = ' + str(no_attri ))
+    print('Total number of nodes in the tree = ' + str(total_count))
+    print('Number of leaf nodes in the tree = ' + str(leaf_count))
+    print('Accuracy of the model on the training dataset = ' + getaccuracy(df_training,root_node) )
+    print()
+
+    target_attr_val = list(df_val)
+    target_attr_val.remove('Class')
+    no_attri_val = len(target_attr_val)
+    acc_val=getaccuracy(df_val,root_node)
+    print('Number of validation instances = ' + str(len(df_val)))
+    print('Number of validation attributes = ' +str(no_attri_val))
+    print('Accuracy of the model on the validation dataset = ' + getaccuracy(df_val,root_node) )
+    print()
+
+    target_attr_test = list(df_test)
+    target_attr_test.remove('Class')
+    no_attri_test = len(target_attr_test)
+    print('Number of testing instances = ' + str(len(df_test)))
+    print('Number of testing attributes = ' + str(no_attri_test))
+    print('Accuracy of the model on the testing dataset = ' + getaccuracy(df_test,root_node))
+    print()
+    node_arr = []
+    print("Building Post-Prune Tree")
+    prun_tree = copy.deepcopy(root_node)
+    prune(prun_tree,ntp,total_count,node_arr)
+    node_arr = []
+
+    acc_prun=  getaccuracy(df_val,prun_tree)
+    count = 0
+    while(acc_prun <= acc_val and count < 10) :
+        #print("Validation accuracy decreased for pruning")
+        #print("Recalculating pruning")
+        prun_tree = copy.deepcopy(root_node)
+        prune(prun_tree,ntp,total_count,node_arr)
+        node_arr=[]
+        acc_prun=  getaccuracy(df_val,prun_tree)
+        count += 1
+    print()
+    print("Prunned Tree:")
+    total_count = 0
+    leaf_count = 0
+    printTree(prun_tree,0)
+    print('Post-Prunned Accuracy' )
+    print("--------------------------------------------------------------")
+    print("Number of training instances = " + str(len(df_training)))
+    print('Number of training attributes = ' + str(no_attri) )
+    print('Total number of nodes in the tree = ' + str(total_count))
+    print('Number of leaf nodes in the tree = ' + str(leaf_count))
+    print('Accuracy of the model on the training dataset = ' + getaccuracy(df_training,prun_tree) )
+    print()
+    print('Number of validation instances = ' + str(len(df_val)))
+    print('Number of validation attributes = ' +str(no_attri_val))
+    print('Accuracy of the model on the validation dataset = ' + getaccuracy(df_val,prun_tree) )
+    print()
+    print('Number of testing instances = ' + str(len(df_test)))
+    print('Number of testing attributes = ' + str(no_attri_test))
+    print('Accuracy of the model on the testing dataset = ' + getaccuracy(df_test,prun_tree))
+    print()
+
+def prune(node,ntp,total_nodes,node_arr):
 
 
+    while(ntp is not 0):
+        node_to_prune= random.randint(1,total_nodes)
+        if(node_to_prune not in node_arr ):
+            node_arr.append(node_to_prune)
+            node_found = trim(node,node_to_prune)
+            if(node_found):
+                ntp-=1
 
-#    df_training.apply(printrow, axis=1)
-    '''
-    attrs = vars(test_node)
-    print ', '.join("%s: %s" % item for item in attrs.items())
-    '''
-
-
-    # calculation for left i.e 0 (-), right i.e 1(+)
 
 
 def build_children(root_node):
+    global  node_num
+
     while(root_node is not None and not root_node.leaf_flag and (len(root_node.target_attr) != 0 ) and root_node.attr != ''):
         left = root_node.df[(root_node.df[root_node.attr] == 0)]
-        #print(left.Class.nunique())
         if(left.Class.nunique() == 1):
             val = left['Class'].iloc[0]
-
-            #print val
+            node_num+=1
             root_node.left = Node(None, None, 0, len(left), root_node.rightcount,
-                                  root_node.target_attr, '', '', val, left,True,root_node)
-            ''' root_node.left.target_attr = [
-                s for s in root_node.target_attr if s != root_node.attr]
-            root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = best_attr(
-            root_node.left.target_attr, root_node.left.df) '''
+                                  root_node.target_attr, '', node_num, val, left,True,root_node)
             root_node.left.leaf_flag = True
 
-            #(root_node.left)
         else:
+            node_num+=1
             root_node.left = Node(None, None, 0, 0, 0,
-                                  root_node.target_attr, '', '', '0', left,False,root_node)
-            root_node.left.target_attr = [
-                s for s in root_node.target_attr if s != root_node.attr]
+                                  root_node.target_attr, '', node_num, '0', left,False,root_node)
+            root_node.left.target_attr = copy.deepcopy(root_node.target_attr)
+            root_node.left.target_attr.remove(root_node.attr)
             root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = best_attr(
                 root_node.left.target_attr, root_node.left.df)
             if(root_node.left.attr != ''):
@@ -139,20 +175,18 @@ def build_children(root_node):
         right = root_node.df[(root_node.df[root_node.attr] == 1)]
         if(right.Class.nunique() == 1):
             val = right['Class'].iloc[0]
-
+            node_num+=1
             root_node.right = Node(None, None, 0, root_node.leftcount, len(right),
-                                   root_node.target_attr, '', '', val, right,True,root_node)
-            ''' root_node.right.target_attr = [
-                s for s in root_node.target_attr if s != root_node.attr]
-            root_node.right.entropy, root_node.right.attr, root_node.right.leftcount, root_node.right.rightcount = best_attr(
-            root_node.right.target_attr, root_node.right.df) '''
+                                   root_node.target_attr, '', node_num, val, right,True,root_node)
             root_node.right.leaf_flag = True
             return(root_node.right)
         else:
+            node_num+=1
             root_node.right = Node(None, None, 0, 0, 0,
-                                   root_node.target_attr, '', '', '1', right,False,root_node)
-            root_node.right.target_attr = [
-                s for s in root_node.target_attr if s != root_node.attr]
+                                   root_node.target_attr, '', node_num, '1', right,False,root_node)
+
+            root_node.right.target_attr = copy.deepcopy(root_node.target_attr)
+            root_node.right.target_attr.remove(root_node.attr)
             root_node.right.entropy, root_node.right.attr, root_node.right.leftcount, root_node.right.rightcount = best_attr(
                 root_node.right.target_attr, root_node.right.df)
             return build_children(root_node.right)
@@ -175,7 +209,6 @@ def printTree( root,count_tab):
             print ()
         for i in range(0,count_tab):
             print("|  " , end = ' ')
-
         print(root.attr +" = 0 : ", end=" ")
         total_count += 1
         printTree(root.left,count_tab+1);
@@ -185,56 +218,15 @@ def printTree( root,count_tab):
         printTree(root.right,count_tab+1);
 
 
-def print_tree(root):
 
-    if root is None:
-        return
-    elif root.leaf_flag :
-        print("leaf node"+ root.attr + "decision " + str(root.label))
-
-        '''  if root.left is None:
-            print("leaf node"+ root.parent.attr + " : 0")
-        if root.right is None:
-            print("leaf node"+ root.parent.attr + " : 1")
-        '''
-        return
-    else:
-        print(root.attr + " " + "0")
-        print_tree(root.left)
-        print(root.attr + " " + "1")
-        print_tree(root.right)
 
 
 def root_def(df_training, target_attr):
-
+    global node_num
     root_node.entropy, root_node.attr, root_node.leftcount, root_node.rightcount = best_attr(
         target_attr, df_training)
-
-    left = df_training[(df_training[root_node.attr] == 0)]
-    if(len(left) == 0):
-        root_node.left = None
-    else:
-        root_node.left = Node(None, None, 0, 0, 0,
-                              root_node.target_attr, '', '', '0', left,False,root_node)
-        root_node.left.target_attr = [
-            s for s in target_attr if s != root_node.attr]
-
-    right = df_training[(df_training[root_node.attr] == 1)]
-    if(len(right) == 0):
-        root_node.right = None
-    else:
-        root_node.right = Node(None, None, 0, 0, 0,
-                               root_node.target_attr, '', '', '1', right,False,root_node)
-        root_node.right.target_attr = [
-            s for s in target_attr if s != root_node.attr]
-
     return root_node
 
-    '''
-    root_node.entropy, root_node.attr,root_node.leftcount,root_node.rightcount  = best_attr(target_attr,df_training)
-    root_node.target_attr = target_attr.remove(root_node.attr)
-    
-    '''
 
 
 def best_attr(target_attr, df):
@@ -308,28 +300,17 @@ def best_attr(target_attr, df):
             min_entropy = entropy
             attr = col
 
-    #print(min_entropy)
-    #print(attr)
     return min_entropy, attr, minus_side_len, plus_side_len
-
-
-'''
-def cal_entropy(minus_cnt, plus_cnt, total):
-    entropy = -[((minus_cnt / total) * (math.log10((minus_cnt / total)) / math.log10(2))
-                 ) + ((plus_cnt / total) * (math.log10((plus_cnt / total)) / math.log10(2)))]
-    print(entropy)
-    return entropy
-'''
 
 
 def getclass(instance, tree,default=None):
     attribute = tree.attr
     if(tree.left is not None and tree.right is not None):
-      #  print(instance[attribute])
+        #  print(instance[attribute])
         if instance[attribute]== 0 :
-           return getclass(instance,tree.left)
+            return getclass(instance,tree.left)
         elif instance[attribute]== 1 :
-           return getclass(instance,tree.right)
+            return getclass(instance,tree.right)
     elif(tree.leaf_flag== True):
         lab = tree.label
         return lab
@@ -338,11 +319,43 @@ def getclass(instance, tree,default=None):
 
 def getaccuracy(df,root_node):
     df['predicted'] = (df.apply(getclass, axis=1, args=(root_node, '1')))
-    print (('Accuracy is ' + str( sum(df['Class']==df['predicted'] ) / (1.0*len(df.index))*100.0)) + '%')
+    acc = str( sum(df['Class']==df['predicted'] ) / (1.0*len(df.index))*100.0)
+    #df.remove['predicted']
+    return acc
+
+
+
+
+
+def trim(node,node_to_prune):
+    # print(node_to_prune)
+    #print("node name"+ str(node.name))
+    #print("node_to_prune" + str(node_to_prune))
+    node_found_flag=False
+    if node is None :
+        return False
+
+    else:
+        if(node.name==node_to_prune and node.left is not None and node.right is not None and node.left.right is None and node.left.left is None and node.right.left is None and node.right.right is None):
+            #print("matching node")
+            node.left = None
+            node.right = None
+            node.leaf_flag = True
+            if(node.leftcount>node.rightcount):
+                node.label=0
+            else:
+                node.label=1
+            node_found_flag = True
+            return node_found_flag
+        else:
+            node_found_flag = trim(node.left,node_to_prune)
+            if(not node_found_flag):
+                return trim(node.right,node_to_prune)
+    return node_found_flag
+    # print(node_found_flag)
+
+
 
 
 #if __name__ == "__main__":
 main(sys.argv)
-
-#  a = Test()
-# b = a.test("abc")
