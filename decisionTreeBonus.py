@@ -43,7 +43,8 @@ def main(args):
     root_node = root_def(df_training, target_attr)
     global leaf_count
     global total_count
-
+    global leaf_height
+    leaf_height = 0
     total_count = 0
     leaf_count = 0
     build_children(root_node)
@@ -91,24 +92,29 @@ def main(args):
     print('Number of testing attributes = ' + str(no_attri_test))
     print('Accuracy of the model on the testing dataset = ' + getaccuracy(df_test,root_node))
     print()
-  
+    global sum
+    sum =0
+    calLeafDept(root_node,0)
+    print("Avg depth = " + str(sum/ leaf_count))
 
-def prune(node,ntp,total_nodes,node_arr):
 
+def calLeafDept( root,count_tab):
+    global sum
+    if(root is None):
+        return 0
+    if(root is not None and root.leaf_flag == True):
+        
+        count_tab += 1
+        sum += count_tab
+    else:
+        
+        
+        calLeafDept(root.left,count_tab+1);
+       
+        
+        calLeafDept(root.right,count_tab+1);
 
-    while(ntp is not 0):
-        node_to_prune= random.randint(1,total_nodes)
-        if(node_to_prune not in node_arr ):
-            node_arr.append(node_to_prune)
-            #print(node_to_prune)
-            node_found = trim(node,node_to_prune)
-            #print(node_found)
-            #print(ntp)
-            if(node_found):
-                ntp-=1
-        if(len(node_arr) > 50):
-            break
-
+    
 
 def build_children(root_node):
     global  node_num
@@ -135,9 +141,8 @@ def build_children(root_node):
                                   root_node.target_attr, '', node_num, '0', left,False,root_node)
             root_node.left.target_attr = copy.deepcopy(root_node.target_attr)
             root_node.left.target_attr.remove(root_node.attr)
-            ''' root_node.left.target_attr = [
-                s for s in root_node.target_attr if s != root_node.attr] '''
-            root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = best_attr(
+            
+            root_node.left.entropy, root_node.left.attr, root_node.left.leftcount, root_node.left.rightcount = random_attr(
                 root_node.left.target_attr, root_node.left.df)
             if(root_node.left.attr != ''):
                 build_children(root_node.left)
@@ -156,7 +161,7 @@ def build_children(root_node):
             root_node.right = Node(None, None, 0, root_node.leftcount, len(right),
                                    root_node.target_attr, '', node_num, val, right,True,root_node)
             root_node.right.leaf_flag = True
-            return(root_node.right)
+            return build_children(root_node.right)
         else:
             node_num+=1
             root_node.right = Node(None, None, 0, 0, 0,
@@ -164,20 +169,19 @@ def build_children(root_node):
 
             root_node.right.target_attr = copy.deepcopy(root_node.target_attr)
             root_node.right.target_attr.remove(root_node.attr)
-            ''' root_node.right.target_attr = [
-                s for s in root_node.target_attr if s != root_node.attr] '''
-            root_node.right.entropy, root_node.right.attr, root_node.right.leftcount, root_node.right.rightcount = best_attr(
+            
+            root_node.right.entropy, root_node.right.attr, root_node.right.leftcount, root_node.right.rightcount = random_attr(
                 root_node.right.target_attr, root_node.right.df)
             if(root_node.right.attr != ''):
                 return build_children(root_node.right)
-            ''' else :
+            else :
                 #root_node.left = None
                 root_node.right.leaf_flag = True
                 if(root_node.right.leftcount > root_node.right.rightcount):
                     root_node.right.label = '0'
                 else:
                     root_node.right.label = '1'
-                return root_node.right '''
+                return root_node.right
 
     return root_node
 
@@ -222,33 +226,16 @@ def print_tree(root):
 
 def root_def(df_training, target_attr):
     global node_num
-    root_node.entropy, root_node.attr, root_node.leftcount, root_node.rightcount = best_attr(
+    root_node.entropy, root_node.attr, root_node.leftcount, root_node.rightcount = random_attr(
         target_attr, df_training)
 
-    left = df_training[(df_training[root_node.attr] == 0)]
-    if(len(left) == 0):
-        root_node.left = None
-    else:
-        node_num+=1
-        root_node.left = Node(None, None, 0, 0, 0,
-                              root_node.target_attr, '', node_num, '0', left,False,root_node)
-        root_node.left.target_attr = [
-            s for s in target_attr if s != root_node.attr]
-
-    right = df_training[(df_training[root_node.attr] == 1)]
-    if(len(right) == 0):
-        root_node.right = None
-    else:
-        root_node.right = Node(None, None, 0, 0, 0,
-                               root_node.target_attr, '',  node_num, '1', right,False,root_node)
-        root_node.right.target_attr = [
-            s for s in target_attr if s != root_node.attr]
+    
 
     return root_node
 
 
 
-def best_attr(target_attr, df):
+def random_attr(target_attr, df):
     min_entropy = 1
     attr = ''
     entropy = 0
@@ -258,7 +245,8 @@ def best_attr(target_attr, df):
 
     if(len(target_attr) > 0) : 
         col = random.choice(target_attr)
-
+        #col = target_attr[0]
+        #print(col)
         minus_side = df[(df[col] == 0)]
             # print(minus_side.head(5))
 
@@ -269,7 +257,7 @@ def best_attr(target_attr, df):
         attr = col
         if minus_side_len == 0 or plus_side_len ==0 :
             attr = ''
-
+        
     return min_entropy, attr, minus_side_len, plus_side_len
 
 
